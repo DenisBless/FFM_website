@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reinforcement Learning via Fixed-point Flow Matching</title>
+<meta name="description" content="Fixed-point Flow Matching (FFM): a data-free procedure for training and fine-tuning flow policies in reinforcement learning.">
+<style>
+  :root {
+    --bg: #fbfbf9; --fg: #1d2126; --muted: #5d6670; --line: #e3e5e1;
+    --card: #ffffff; --accent: #2a9d8f; --accent-ink: #1d7a6e; --gold: #b58a2b;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f1114; --fg: #e8eaed; --muted: #9aa3ad; --line: #272b31;
+            --card: #171a1f; --accent: #3fb8a8; --accent-ink: #6fd3c5; --gold: #d9b35c; }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 48px 20px 80px; }
+  header { text-align: center; margin-bottom: 40px; }
+  h1 { font-size: clamp(1.7rem, 4vw, 2.5rem); line-height: 1.15; margin: 0 0 14px; letter-spacing: -0.01em; }
+  .authors { color: var(--muted); font-size: 1rem; margin: 0 0 18px; }
+  .links { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .links a { display: inline-block; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line);
+             background: var(--card); color: var(--fg); text-decoration: none; font-size: .95rem; }
+  .links a:hover { border-color: var(--accent); color: var(--accent-ink); }
+  h2 { font-size: 1.35rem; margin: 48px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  p { margin: 0 0 14px; }
+  .lead { font-size: 1.05rem; }
+  figure { margin: 0; }
+  figure.wide { margin-bottom: 16px; }
+  figure.wide img { width: 100%; height: auto; display: block; border-radius: 10px; background: #fff; }
+  figure.wide img.plot { padding: 14px 10px 8px; }
+  figcaption { color: var(--muted); font-size: .9rem; margin-top: 10px; }
+  .steps { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin: 18px 0 6px; }
+  .step { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: .95rem; }
+  .step b { color: var(--accent-ink); display: block; margin-bottom: 4px; }
+  .eq { font-family: var(--mono); font-size: .9rem; background: var(--card); border: 1px solid var(--line);
+        border-radius: 10px; padding: 12px 14px; overflow-x: auto; margin: 10px 0 16px; }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+  .grid figure { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .grid video { width: 100%; display: block; background: #000; aspect-ratio: 1 / 1; object-fit: contain; }
+  .grid figcaption { padding: 9px 12px 11px; margin: 0; }
+  .grid .name { font-weight: 600; color: var(--fg); font-size: .95rem; }
+  .grid .meta { font-size: .78rem; }
+  .note { color: var(--muted); font-size: .9rem; }
+  footer { margin-top: 56px; color: var(--muted); font-size: .85rem; text-align: center; }
+  code { font-family: var(--mono); font-size: .9em; }
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <h1>Reinforcement Learning via<br>Fixed-point Flow Matching</h1>
+  <p class="authors">Anonymous authors &middot; under review</p>
+  <nav class="links">
+    <a href="#paper">Paper</a>
+    <a href="#code">Code</a>
+    <a href="#videos">Videos</a>
+    <a href="#results">Results</a>
+  </nav>
+</header>
+
+<section>
+  <p class="lead">In maximum-entropy and behaviour-constrained RL the optimal policy is a Boltzmann
+  distribution. Flow policies trained with flow matching can represent such complex, multimodal
+  distributions, but flow matching needs samples from the distribution it is fitting, and in RL
+  there are none. <strong>Fixed-point flow matching (FFM)</strong> is a data-free procedure for
+  training and fine-tuning flow policies in RL: it keeps the simple flow-matching regression and
+  replaces the data-derived target with one read off the critic.</p>
+</section>
+
+<h2 id="method">Method</h2>
+<figure class="wide">
+  <img src="assets/method.png" alt="The FFM policy-improvement step: generate, label, interpolate, regress.">
+  <figcaption><strong>The FFM policy-improvement step.</strong> The optimal policy
+  &pi;<sup>+</sup> &prop; <i>e</i><sup><i>Q</i>/&lambda;</sup> is a fixed point of this loop.</figcaption>
+</figure>
+<div class="steps">
+  <div class="step"><b>1 &middot; Generate</b> Clean actions <i>X</i><sub>1</sub> are sampled from the
+    current policy by integrating the flow ODE &mdash; forward only, no gradients.</div>
+  <div class="step"><b>2 &middot; Label</b> The critic's action gradient &nabla;<sub>x</sub><i>Q</i>(<i>s</i>, <i>X</i><sub>1</sub>)
+    is the regression target; for a Boltzmann target it is the score the velocity field must follow.</div>
+  <div class="step"><b>3 &middot; Interpolate</b> Fresh noise &epsilon; and <i>X</i><sub>1</sub> give a noised action
+    <i>X<sub>t</sub></i> = &alpha;(<i>t</i>)<i>X</i><sub>1</sub> + &beta;(<i>t</i>)&epsilon;.</div>
+  <div class="step"><b>4 &middot; Regress</b> A flow-matching-style regression pulls the velocity field
+    <i>v<sub>&theta;</sub></i>(<i>X<sub>t</sub></i>, <i>t</i> | <i>s</i>) toward the FFM target.</div>
+</div>
+<p>The construction rests on the <em>target flow identity</em>: for a Boltzmann target, the velocity
+field that generates the noised target is, up to a rescaling of the noisy action, a conditional
+average of the critic's action gradients at clean actions. Evaluating that regression with samples
+from the current policy and iterating gives FFM. The update requires neither backpropagation through
+the integrator nor importance weights nor conversion of the flow into a diffusion model. In the
+offline-to-online setting a path-space KL trust region keeps the fine-tuned policy close to the
+pretrained reference policy, with the multiplier set by projected dual descent on a KL budget.</p>
+
+<h2 id="videos">Learned policies</h2>
+<p class="note">One successful offline-to-online rollout per OGBench domain, from the final
+1.5M-step checkpoint. Videos loop; hover for controls.</p>
+<div class="grid" id="grid"></div>
+
+<h2 id="results">Offline-to-online results on OGBench</h2>
+<p>FFM fine-tunes a BC-pretrained flow policy for 1M offline steps and then 500K online environment
+steps, against seven baselines under an identical protocol.</p>
+<figure class="wide">
+  <img class="plot" src="assets/results_curves.svg" alt="Per-domain success-rate curves of FFM and seven baselines over 1M offline and 500K online steps on ten OGBench domains.">
+  <figcaption>Per-domain aggregated offline-to-online success rate (mean over the five tasks and all
+  seeds) against training steps in millions. Offline (&le;&thinsp;1M) and online (&gt;&thinsp;1M) phases
+  are shaded; FFM (ours) is drawn in bold with a &plusmn;1 standard-deviation band.</figcaption>
+</figure>
+<p class="note">FFM reaches the best average success after online fine-tuning (0.95 vs. 0.93 for the
+next-best method) and is the only method at or near the top on every locomotion domain. The paper
+additionally shows that the same update trains flow policies from scratch in online RL on the
+DeepMind Control suite.</p>
+
+<h2 id="paper">Paper</h2>
+<p>The paper is under review. A link to the manuscript will appear here when it is public.</p>
+
+<h2 id="code">Code</h2>
+<p>The full method is a single file, <code>agents/ffm.py</code>, with scripts that reproduce every
+result above from the per-domain recipe. A link to the repository will appear here when it is public.</p>
+
+<footer>Reinforcement Learning via Fixed-point Flow Matching &middot; project page</footer>
+</main>
+
+<script>
+  const ITEMS = [
+    ["antmaze-large.mp4",       "AntMaze-Large",       "locomotion · task 3"],
+    ["antmaze-giant.mp4",       "AntMaze-Giant",       "locomotion · task 1"],
+    ["humanoidmaze-medium.mp4", "HumanoidMaze-Medium", "locomotion · task 4"],
+    ["humanoidmaze-large.mp4",  "HumanoidMaze-Large",  "locomotion · task 5"],
+    ["cube-double.mp4",         "Cube-Double",         "manipulation · task 3"],
+    ["cube-triple.mp4",         "Cube-Triple",         "manipulation · task 2"],
+    ["cube-quadruple.mp4",      "Cube-Quadruple",      "manipulation · task 2"],
+    ["scene.mp4",               "Scene",               "manipulation · task 3"],
+    ["puzzle-3x3.mp4",          "Puzzle-3x3",          "manipulation · task 5"],
+    ["puzzle-4x4.mp4",          "Puzzle-4x4",          "manipulation · task 5"],
+  ];
+  const grid = document.getElementById("grid");
+  for (const [src, name, meta] of ITEMS) {
+    const fig = document.createElement("figure");
+    const v = document.createElement("video");
+    v.src = "videos/" + src; v.autoplay = true; v.loop = true; v.muted = true;
+    v.playsInline = true; v.controls = true; v.preload = "metadata";
+    fig.appendChild(v);
+    const cap = document.createElement("figcaption");
+    cap.innerHTML = `<div class="name">${name}</div><div class="meta">${meta}</div>`;
+    fig.appendChild(cap);
+    grid.appendChild(fig);
+  }
+</script>
+</body>
+</html>
