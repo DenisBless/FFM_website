@@ -145,9 +145,37 @@ steps, against seven baselines under an identical protocol.</p>
   are shaded; FFM (ours) is drawn in bold with a &plusmn;1 standard-deviation band.</figcaption>
 </figure>
 <p class="note">FFM reaches the best average success after online fine-tuning (0.95 vs. 0.93 for the
-next-best method) and is the only method at or near the top on every locomotion domain. The paper
-additionally shows that the same update trains flow policies from scratch in online RL on the
-DeepMind Control suite.</p>
+next-best method) and is the only method at or near the top on every locomotion domain. The same
+update also trains flow policies entirely from scratch &mdash; see the on-policy results below.</p>
+
+<h2 id="onpolicy">On-Policy Maximum Entropy RL</h2>
+<p>FFM is not limited to fine-tuning a pretrained policy: in the on-policy maximum-entropy setting
+the same critic-derived regression learns flow policies <em>from scratch</em>, as we demonstrate on
+the 20 MJX MuJoCo&nbsp;Playground tasks and on MJX's four humanoid joystick tasks, against eight
+baselines (10 seeds per task, 50M environment steps). FFM performs on par with the strongest
+baselines on the MJX Playground tasks, and performs favorably on the humanoid tasks in terms of
+both end performance and learning speed. On playground tasks where exploration is the bottleneck,
+FFM additionally benefits from temporally correlated Ornstein&ndash;Uhlenbeck exploration noise:
+<em>FFM&nbsp;+&nbsp;OU</em> uses the best OU time constant on those tasks and plain FFM
+elsewhere.</p>
+<figure class="wide">
+  <img class="plot" src="assets/onpolicy_aggregate.svg" alt="Aggregated IQM learning curves and final IQMs of FFM, FFM + OU and eight baselines on the 20 MJX Playground tasks and the four MJX humanoid tasks.">
+  <figcaption><strong>Aggregate results.</strong> IQM learning curves and final IQMs on the 20 MJX
+  Playground tasks (left pair, return normalised by the suite maximum) and the four MJX humanoid
+  joystick tasks (right pair). Bands and error bars are 95% stratified bootstrap confidence
+  intervals (Agarwal et&nbsp;al., 2021).</figcaption>
+</figure>
+<figure class="wide">
+  <img class="plot" src="assets/onpolicy_dmc_grid.svg" alt="Per-task IQM learning curves of FFM, FFM + OU and eight baselines on each of the 20 MJX Playground tasks.">
+  <figcaption><strong>Per-task curves, MJX Playground.</strong> IQM over the 10 seeds per task with
+  95% bootstrap confidence intervals; panels where FFM&nbsp;+&nbsp;OU uses an OU arm are annotated
+  with the chosen time constant &tau;<sub>ou</sub>.</figcaption>
+</figure>
+<figure class="wide">
+  <img class="plot" src="assets/onpolicy_humanoid_grid.svg" alt="Per-task IQM learning curves of FFM and eight baselines on each of the four MJX humanoid joystick tasks.">
+  <figcaption><strong>Per-task curves, MJX humanoids.</strong> IQM over the 10 seeds per task with
+  95% bootstrap confidence intervals.</figcaption>
+</figure>
 
 <h2 id="paper">Paper</h2>
 <p>The paper is under review. A link to the manuscript will appear here when it is public.</p>
