@@ -68,6 +68,13 @@
   .note { color: var(--muted); font-size: .9rem; }
   footer { margin-top: 56px; color: var(--muted); font-size: .85rem; text-align: center; }
   code { font-family: var(--mono); font-size: .9em; }
+  p a { color: var(--accent-ink); }
+  .bibtex { position: relative; margin: 10px 0 16px; }
+  .bibtex pre { margin: 0; font-family: var(--mono); font-size: .85rem; line-height: 1.5; background: var(--card);
+                border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; }
+  .bibtex button { position: absolute; top: 8px; right: 8px; padding: 3px 10px; cursor: pointer; font: inherit;
+                   font-size: .8rem; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); }
+  .bibtex button:hover { border-color: var(--accent); color: var(--accent-ink); }
 </style>
 <script>
   // Apply a previously chosen theme before first paint, so the page does not flash.
@@ -90,10 +97,11 @@
   <p class="authors">Denis&nbsp;Blessing &middot; Onur&nbsp;Celik &middot; Gerhard&nbsp;Neumann</p>
   <p class="affil">Autonomous Learning Robots Lab (ALR), Karlsruhe Institute of Technology (KIT)</p>
   <nav class="links">
-    <a href="#paper">Paper</a>
-    <a href="#code">Code</a>
+    <a href="https://arxiv.org/abs/2610.12848">Paper</a>
+    <a href="https://github.com/DenisBless/FFM_RL">Code</a>
     <a href="#videos">Videos</a>
     <a href="#results">Results</a>
+    <a href="#bibtex">BibTeX</a>
   </nav>
 </header>
 
@@ -122,13 +130,6 @@
   <div class="step"><b>4 &middot; Regress</b> A flow-matching-style regression pulls the velocity field
     <i>v<sub>&theta;</sub></i>(<i>X<sub>t</sub></i>, <i>t</i> | <i>s</i>) toward the FFM target.</div>
 </div>
-<p>The construction rests on the <em>target flow identity</em>: for a Boltzmann target, the velocity
-field that generates the noised target is, up to a rescaling of the noisy action, a conditional
-average of the critic's action gradients at clean actions. Evaluating that regression with samples
-from the current policy and iterating gives FFM. The update requires neither backpropagation through
-the integrator nor importance weights nor conversion of the flow into a diffusion model. In the
-offline-to-online setting a path-space KL trust region keeps the fine-tuned policy close to the
-pretrained reference policy, with the multiplier set by projected dual descent on a KL budget.</p>
 
 <h2 id="videos">Learned policies</h2>
 <p class="note">One successful offline-to-online rollout per OGBench domain, from the final
@@ -178,11 +179,28 @@ elsewhere.</p>
 </figure>
 
 <h2 id="paper">Paper</h2>
-<p>The paper is under review. A link to the manuscript will appear here when it is public.</p>
+<p><a href="https://arxiv.org/abs/2610.12848">Reinforcement Learning via Fixed-point Flow Matching</a>.
+Denis Blessing, Onur Celik, Gerhard Neumann. arXiv:2610.12848, 2026.
+[<a href="https://arxiv.org/pdf/2610.12848">PDF</a>]</p>
+<p id="bibtex">If you find this work useful, please cite:</p>
+<div class="bibtex">
+  <button type="button" id="copy-bibtex">Copy</button>
+<pre><code id="bibtex-text">@misc{blessing2026reinforcementlearningfixedpointflow,
+  title={Reinforcement Learning via Fixed-point Flow Matching},
+  author={Denis Blessing and Onur Celik and Gerhard Neumann},
+  year={2026},
+  eprint={2610.12848},
+  archivePrefix={arXiv},
+  primaryClass={cs.LG},
+  url={https://arxiv.org/abs/2610.12848},
+}</code></pre>
+</div>
 
 <h2 id="code">Code</h2>
-<p>The full method is a single file, <code>agents/ffm.py</code>, with scripts that reproduce every
-result above from the per-domain recipe. A link to the repository will appear here when it is public.</p>
+<p>The code is available at <a href="https://github.com/DenisBless/FFM_RL">github.com/DenisBless/FFM_RL</a>.
+The full method is a single file,
+<a href="https://github.com/DenisBless/FFM_RL/blob/main/agents/ffm.py"><code>agents/ffm.py</code></a>, with scripts
+that reproduce every result above from the per-domain recipe.</p>
 
 <footer>Reinforcement Learning via Fixed-point Flow Matching &middot; project page</footer>
 </main>
@@ -221,6 +239,19 @@ result above from the per-domain recipe. A link to the repository will appear he
       : matchMedia("(prefers-color-scheme: dark)").matches;
     root.dataset.theme = dark ? "light" : "dark";
     try { localStorage.setItem("theme", root.dataset.theme); } catch (e) {}
+  });
+
+  // Copy the BibTeX entry; if the clipboard is unavailable, select it so the user can copy by hand.
+  document.getElementById("copy-bibtex").addEventListener("click", async (e) => {
+    const btn = e.currentTarget, code = document.getElementById("bibtex-text");
+    try {
+      await navigator.clipboard.writeText(code.textContent);
+      btn.textContent = "Copied";
+    } catch (err) {
+      getSelection().selectAllChildren(code);
+      btn.textContent = "Selected";
+    }
+    setTimeout(() => { btn.textContent = "Copy"; }, 1500);
   });
 </script>
 </body>
